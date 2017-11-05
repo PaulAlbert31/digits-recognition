@@ -1,6 +1,7 @@
 # Digits recognition
 
 This is a personal project i work on during my free time. Feel free to try it yourself, i will add the instruction further down. I use the C++ language for now but i might switch to python in the future.
+The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supelec.fr/metz/personnel/frezza/
 
 # What's new ?
 
@@ -9,7 +10,7 @@ This is a personal project i work on during my free time. Feel free to try it yo
 
 Yet to be done:
   - Unsupervised classification using online k-means.
-    - Improve the online k-means by using Kohonen maps.
+    - ~~Improve the online k-means by using Kohonen maps.~~
     - Improve the representation of the digit to make it robust to scale and rotation
 - Supervised classification using SVM
 - Supervised classification using ensemble methods
