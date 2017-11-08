@@ -7,6 +7,7 @@
 #include <cstring>
 
 
+#define VERBOSE true
 #define WIDTH  6
 #define HEIGHT 5
 #define LENGTH 40
@@ -19,12 +20,10 @@ typedef uci::Map<WIDTH,HEIGHT,
 
 typedef uci::Map<WIDTH,HEIGHT,SECTORS,R> ContextPrototypes;
 
-typedef uci::Map<WIDTH,HEIGHT,1,LENGTH> FrequencyPrototypes;
-
 typedef std::vector<std::vector<int>> Context;
 
 
-// Indicies are defined as follow
+// How indicies are for an imagette
 //
 //         j
 //         |
@@ -41,28 +40,12 @@ typedef std::vector<std::vector<int>> Context;
 //   ............  
 
 
-// Imitilises an imagette prototype
-void initProto(Prototypes::imagette& w,
-	       const uci::Database::imagette& xi) {
-  for(int i = 0 ; i < uci::Database::imagette::height ; ++i)
-    for(int j = 0 ; j < uci::Database::imagette::width ; ++j)
-      w(i,j) = (double)(xi(i,j));
-}
 
 void initProtoContext(ContextPrototypes::imagette& w,
 	       const Context& xi) {
   for(int i = 0 ; i < R ; ++i)
     for(int j = 0 ; j < SECTORS ; ++j)
       w(i,j) = (double)(xi[i][j]);
-}
-
-//Updates  prototype
-void learnProto(double alpha, Prototypes::imagette& w, const uci::Database::imagette& xi){
-  for(int i = 0 ; i < uci::Database::imagette::height ; ++i){
-    for(int j = 0 ; j < uci::Database::imagette::width ; ++j){
-      w(i,j) = w(i,j) + alpha * (xi(i,j)-w(i,j));
-    }
-  }
 }
 
 void learnProtoContext(double alpha, ContextPrototypes::imagette& w, const Context& xi){
@@ -73,7 +56,8 @@ void learnProtoContext(double alpha, ContextPrototypes::imagette& w, const Conte
   }
 }
 
-// Calculates the euclydian distance to a context prototype
+
+// Calcul de la distance euclydienne à un context prototype
 double distanceProtoContext(const ContextPrototypes::imagette& w, const Context& xi)        {
   double distE = 0;
   for(int i = 0 ; i < R ; ++i){
@@ -85,49 +69,14 @@ double distanceProtoContext(const ContextPrototypes::imagette& w, const Context&
   return distE;
 }
 
-// Calculates the euclydian distance to a frequency prototype
-double distanceProtoFrequency(const FrequencyPrototypes::imagette& w, std::map<int,double>& shapeFrequency)        {
-  double distE = 0;
-  for(int i = 0 ; i < LENGTH ; ++i){
-      double d = w(0,i)-(double)shapeFrequency[i];
-      distE += d*d;
-}
-  return distE;
-}
-
-
-//Calculates nearest neighbour context prototype
-void winnerProtoContext(const ContextPrototypes& cprototypes, const Context& xi, int& i, int& j) {
-  double minDist = distanceProtoContext(cprototypes(0,0),xi)+1;
+//Calcul du context prototype le plus proche
+void winnerProtoContext(const ContextPrototypes& protos, const Context& xi, int& i, int& j) {
+  double minDist = distanceProtoContext(protos(0,0),xi)+1;
   double newDist;
   for(int ii = 0 ; ii < HEIGHT ; ++ii){
     for(int jj = 0 ; jj < WIDTH ; ++jj){
-      newDist = distanceProtoContext(cprototypes(ii,jj),xi);
+      newDist = distanceProtoContext(protos(ii,jj),xi);
       if (newDist<=minDist){
-	minDist = newDist;
-	i = ii;
-	j = jj;
-      }
-    }
-  }
-}
-void consoleDisplay(Context& v){
-   for(auto it = v.begin();it!=v.end();it++){
-     for(auto iy = (*it).begin();iy!=(*it).end();iy++)
-       std::cout<<" "<<(*iy);
-     std::cout<<" "<<std::endl;
-   };
-   std::cout<<std::endl;
- }
-
-//Calculates nearest neighbour frequency prototype
-void winnerProtoFrequency(const FrequencyPrototypes& fprototypes, std::map<int,double>& shapeFrequency, int& i, int& j) {
-  double minDist = distanceProtoFrequency(fprototypes(0,0),shapeFrequency)+1;
-  double newDist;
-  for(int ii = 0 ; ii < HEIGHT ; ++ii){
-    for(int jj = 0 ; jj < WIDTH ; ++jj){
-      newDist = distanceProtoFrequency(fprototypes(ii,jj),shapeFrequency);
-      if (newDist<minDist){
 	minDist = newDist;
 	i = ii;
 	j = jj;
@@ -159,8 +108,8 @@ std::vector<std::pair<int,int>> detectEdges(uci::Database::imagette xi){
   double grad;
   for(int i = 1 ; i < uci::Database::imagette::height - 1 ; ++i){
     for(int j = 1 ; j < uci::Database::imagette::width - 1 ; ++j){
-      grad = (-xi(i,j-1)+4*xi(i,j)+xi(i,j+1))*(-xi(i,j-1)+4*xi(i,j)+xi(i,j+1));
-      grad+= (xi(i-1,j)+4*xi(i,j)-xi(i+1,j))*(xi(i-1,j)+4*xi(i,j)-xi(i+1,j));
+      grad = (-xi(i,j-1)+xi(i,j+1))*(-xi(i,j-1)+xi(i,j+1));
+      grad+= (xi(i-1,j)-xi(i+1,j))*(xi(i-1,j)-xi(i+1,j));
       grad = sqrt(grad);
       if (grad > 200)
 	yi.push_back({i,j});
@@ -235,18 +184,16 @@ double meanDist(std::vector<std::pair<int,int>>& v){
 }
 
 
-void clusterImagetteContext(std::vector<Context>& contexts, ContextPrototypes& cprototypes, std::map<int,double>& shapeFrequency){
-  int i=0;int j=0;
-  shapeFrequency.clear();
-  for (auto it = contexts.begin(); it<contexts.end(); it++){
-    winnerProtoContext(cprototypes,*it,i,j);
-    shapeFrequency[j + HEIGHT*i]+=10;
-   
-  }
-}
+ void consoleDisplay(Context& v){
+   for(auto it = v.begin();it!=v.end();it++){
+     for(auto iy = (*it).begin();iy!=(*it).end();iy++)
+       std::cout<<" "<<(*iy);
+     std::cout<<" "<<std::endl;
+   };
+   std::cout<<std::endl;
+ }
 
-void makeImagetteContext(const uci::Database::imagette& xi, std::vector<Context>& contextVector){
-  contextVector.clear();
+void makeImagetteContext(const uci::Database::imagette& xi, std::vector<Context>& contexts){
    auto u = detectEdges(xi);
    auto dist = meanDist(u);
    for (auto it = u.begin();it<u.end();it++){
@@ -254,26 +201,64 @@ void makeImagetteContext(const uci::Database::imagette& xi, std::vector<Context>
      auto currentPoint = *it;
      v.erase(v.begin()+(it-u.begin()));
      Context cont = createContext(currentPoint,v,dist);
-     contextVector.push_back(cont);
+     contexts.push_back(cont);
    }
  }
 
-void initProtoFreq(FrequencyPrototypes::imagette& w,
-	       const uci::Database::imagette& xi,
-	        ContextPrototypes& cprototypes) {
-  std::map<int,double> shapeFrequency;
-  shapeFrequency.clear();
-  std::vector<Context> contextVector = std::vector<Context>();
-  makeImagetteContext(xi,contextVector);
-  clusterImagetteContext(contextVector,cprototypes,shapeFrequency);
-  for (int i = 0; i<LENGTH;i++){
-    w(0,i) = shapeFrequency[i];
+void majKohonenContext(int& i,int& j, ContextPrototypes& cprototypes, Context& xi, double& alpha){
+  for (int k = 0; k< HEIGHT; k++){
+      for (int l = 0 ; l< WIDTH;l++){
+  	double hh = winningRate(i,j,k,l,alpha);
+  	if(hh>0){
+  	  for (int m = 0; m< R;m++){
+  	    for (int n =0; n<SECTORS;n++){
+  	      cprototypes(k,l)(m,n) = cprototypes(k,l)(m,n) + alpha*hh*(xi[m][n]-cprototypes(k,l)(m,n));
+  	    }
+  	  }
+  	}
+      }
+    }
+  }
+
+void majKohonenContextList(ContextPrototypes& cprototypes, std::vector<Context>& v, double& alpha){
+  int i = 0;
+  int j = 0;
+  for (auto it = v.begin();it<v.end();it++){
+    winnerProtoContext(cprototypes,(*it),i,j);
+    majKohonenContext(i,j,cprototypes,(*it),alpha);
   }
 }
 
-
 //adapted from https://www.stev.org/post/cppreadwritestdmaptoafile
 
+int WriteFile(std::string fname, ContextPrototypes& cprot) {
+  int count = 0;
+  std::ostringstream strs;
+  remove(fname.c_str());
+  FILE *fp = fopen(fname.c_str(), "w");
+  if (!fp)
+    return -errno;
+  int u = 0;
+
+  for (int k = 0; k< HEIGHT; k++){
+      for (int l = 0 ; l< WIDTH;l++){
+  	  for (int m = 0; m< R;m++){
+  	    for (int n =0; n<SECTORS;n++){
+  	      fprintf(fp, "%s=%s\n",std::to_string((u)).c_str(),std::to_string((int)(cprot(k,l)(m,n))).c_str());
+	      count++;
+		  
+	    }
+  	  }
+	  u++;
+  	}
+      }
+    
+
+  fclose(fp);
+  return count;
+}
+
+// Not used here, if you wich to charge an existing cluster to better it, don't forget to set the alpha variable to a low level.
 int ReadFile(std::string fname, ContextPrototypes& cprototypes) {
   int count = 0;
   if (access(fname.c_str(), R_OK) < 0)
@@ -314,10 +299,10 @@ int ReadFile(std::string fname, ContextPrototypes& cprototypes) {
 	  c[u][n] = strtod(sep, NULL);
 	  count++;
 	}
+	}
+	initProtoContext(cprototypes(k,l),c);
       }
-      initProtoContext(cprototypes(k,l),c);
     }
-  }
   
 
   if (buf)
@@ -335,13 +320,13 @@ int ReadFile(std::string fname, ContextPrototypes& cprototypes) {
 
 
 
+
+
 int main(int argc, char* argv[]) {
 
   srand(time(NULL));
-  
-  Prototypes prototypes;
-  
-  // Utilisons la base de donnees.
+    
+  //The MINSIT dataset
   uci::Database database;
   std::vector<Context> contextVector = std::vector<Context>();
   
@@ -350,98 +335,71 @@ int main(int argc, char* argv[]) {
   // Let's cluster the contexts to disminich dimension
 
   ContextPrototypes cprototypes;
-  FrequencyPrototypes fprototypes;
-  // Let's use the cluster we previously created
-  ReadFile("map",cprototypes);
-  
-  
-
-  
-  //  First HEIGHT*WIDTH parameters
-  for (int i = 0;i<HEIGHT;i++){
-    for (int j = 0;j<WIDTH;j++){
-      int v1 = std::rand() % 100;
-      for (int u=0;u<v1;u++)
-	database.Next();
-      initProtoFreq(fprototypes(i,j), database.input, cprototypes);
-      initProto(prototypes(i,j),database.input);
+ 
+  //  Initialisation
+  int j = 0;
+  for (int i=0; i<HEIGHT;i++){
+    for (int v=0; v<WIDTH; v++){
+      if (j<LENGTH/2)
+	initProtoContext(cprototypes(i,v), contextVector[j]);
+      else
+	initProtoContext(cprototypes(i,v), contextVector[LENGTH-j]);
+      j++;
     }
   }
-
-
-  int j = 0;
   int i = 0;
-  double alpha = 0.9;
-  double halpha = 1.0;
-  int nb = 3000;
+  j = 0;
+  double alpha = 0.1;
+  
+  // We use the rest of the contexts in contextVector to better our online-kmeans + kohonen maps clustering (off line)
+  for (auto it = contextVector.begin()+10;it<contextVector.end()-10;it++){
+    winnerProtoContext(cprototypes,(*it),i,j);
+    majKohonenContext(i,j,cprototypes,(*it),alpha);
+  };
+
+
+  int nb = 1000;
   int period = 10;
   int frame = 0;
   int periodalpha = 40;
   int q = 0;
   int w = 0;
-  std::map<int,double> shapeFrequency;
 
-  std::cout<<"Initialisation terminated, starting image clustering"<<std::endl;
-  
   for(int h = 0;h<nb;h++){
 
     
 
-    //Make an image every period iterations
-    if (h%period==0){
-      fprototypes.PPM("frequency",frame++);
-      prototypes.PPM("kmeans",frame);
+    //  Makes a image every period iterations
+    if (h%period==0 && VERBOSE){
+      cprototypes.PPM("context",frame++);
 
     }
-    //Disminiching the alpha parametter to get a stable response
+    
+    //Disminiching the alpha parametter to get a stable cluster
     if (h%periodalpha == 0){
       alpha = alpha*0.95;
-      halpha = halpha * 0.99;
       if ((q++)*periodalpha/nb>0.25){
 	std::cout << 25*(w++)<< " %"<<std::endl;
 	q=0;
       }
     }
-
     
       
-    // Lets go to the next number
+  // Lets get a new written number from MNIST
     database.Next();
 
-    // Get the image
-    auto xi = database.input;
+  // Storing contexts contextVector
+    makeImagetteContext(database.input,contextVector);
 
-    // Storing contexts contextVector
-    makeImagetteContext(xi,contextVector);
-    
-    // Get the frequency of our clustered contexts
-    shapeFrequency.clear();
-    clusterImagetteContext(contextVector,cprototypes,shapeFrequency);
+   //Better our k-means cluster
+    majKohonenContextList(cprototypes,contextVector,alpha);
 
-    
-    // Get the i,j coordinates of the closest frequency prototype
-    winnerProtoFrequency(fprototypes,shapeFrequency,i,j);
-    
-
-    //Better our k-means + kohonen frequency cluster
-    
-    for (int k = 0; k< HEIGHT; k++){
-      for (int l = 0 ; l< WIDTH;l++){
-  	double hh = winningRate(i,j,k,l,halpha);
-  	if(hh>0){
-	  for (int n = 0; n<LENGTH;n++)
-	      fprototypes(k,l)(0,n) = fprototypes(k,l)(0,n) + (double)(alpha*hh*(shapeFrequency[n]-fprototypes(k,l)(0,n)));
-	  // to visualise the progression
-	  for (int m = 0; m< uci::Database::imagette::height;m++){
-	    for (int n =0; n<uci::Database::imagette::width;n++){
-	      prototypes(k,l)(m,n) = prototypes(k,l)(m,n) + alpha*hh*(xi(m,n)-prototypes(k,l)(m,n));
-
-	    }
-	  }
-	}
-      }
-    }
   }
-
+  //Writing our cluster in a map file
+  
+  WriteFile("map", cprototypes);
+  ContextPrototypes v;
+  ReadFile("map", v);
+  v.PPM("ici",1);
   return 0;
 }
