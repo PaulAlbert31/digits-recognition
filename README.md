@@ -9,10 +9,10 @@ The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supele
 
 
 Yet to be done:
-  - Unsupervised classification using online k-means.
+  - ~~Unsupervised classification using online k-means.~~
     - ~~Improve the online k-means by using Kohonen maps.~~
     - ~~Improve the representation of the digit to make it robust to scaling and rotation.~~
-    - Improve k-means classification by blurring th images.
+    - ~~Improve k-means classification by blurring th images.~~
 - Supervised classification using SVM
 - Supervised classification using ensemble methods
 - Reiforcement learning using online learners
@@ -31,6 +31,12 @@ This will create a number of images in the current directory, please set VERBOSE
 ```sh
 #define VERBOSE true
 ```
+There is now other options :
+  - BLUR will blur the images if set to TRUE.
+  - BFACTOR is the factor you want to use to blur the images (should be < 1).
+  - TEST will genrerate 100 predictions of the classification prototype and stroge them in files "imagette-xxx.ppm" if set to TRUE. The label will be written in the console you type ./online-kmeans-kohonen in.
+  - REDUCENOISE will attempt to clear the final classification prototype (not very effective yet) if set to TRUE.
+    
 To make a short film out of it : (only if the images were generated)
 
 ```sh
@@ -85,4 +91,3 @@ To delete all images + film :
 $ find . -name 'frequency*' -delete
 $ find . -name 'kmeans*' -delete
 ```
-
