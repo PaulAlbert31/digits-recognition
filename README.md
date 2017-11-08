@@ -11,7 +11,8 @@ The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supele
 Yet to be done:
   - Unsupervised classification using online k-means.
     - ~~Improve the online k-means by using Kohonen maps.~~
-    - Improve the representation of the digit to make it robust to scale and rotation
+    - ~~Improve the representation of the digit to make it robust to scaling and rotation.~~
+    - Improve k-means classification by blurring th images.
 - Supervised classification using SVM
 - Supervised classification using ensemble methods
 - Reiforcement learning using online learners
@@ -26,8 +27,11 @@ $ cd digits-recognition
 $ g++ -o online-kmeans-kohonen -Wall -ansi -O3 online-kmeans-kohonen.cc
 $ ./online-kmeans-kohonen
 ```
-This will create a number of images in the current directory
-To make a short film out of it :
+This will create a number of images in the current directory, please set VERBOSE to false if you don't want to.
+```sh
+#define VERBOSE true
+```
+To make a short film out of it : (only if the images were generated)
 
 ```sh
 $ avconv -i kmeans-%06d.ppm -b:v 1M kmeans.avi
@@ -36,6 +40,49 @@ To delete all images + film :
 ```sh
 $ find . -name 'kmeans*' -delete
 ```
+### Cluster generation for edges points
+```sh
+$ cd digits-recognition
+$ g++ -o shape-context -Wall -ansi -O3 shape-context.cc
+$ ./shape-context
+```
+This will create a number of images in the current directory, please set VERBOSE to false if you don't want to.
+```sh
+#define VERBOSE true
+```
+A "map" file will be generated, containing the cluster data.
+To make a short film out of it : (only if the images were generated)
 
-
+```sh
+$ avconv -i context-%06d.ppm -b:v 1M context.avi
+```
+To delete all images + film :
+```sh
+$ find . -name 'context*' -delete
+```
+### Image classification using context clustering
+```sh
+$ cd digits-recognition
+$ g++ -o identifier-context -Wall -ansi -O3 identifier-context.cc
+$ ./identifier-context
+```
+This will create a number of images in the current directory, please set VERBOSE to false if you don't want to.
+```sh
+#define VERBOSE true
+```
+The "map" file will be needed, make sure you have previously clustered the edges points.
+To make a short film out of it : (only if the images were generated)
+For the frequency cluster
+```sh
+$ avconv -i frequency-%06d.ppm -b:v 1M frequency.avi
+```
+For the k means + kohonen cluster of the images 
+```sh
+$ avconv -i kmeans-%06d.ppm -b:v 1M kmeans.avi
+```
+To delete all images + film :
+```sh
+$ find . -name 'frequency*' -delete
+$ find . -name 'kmeans*' -delete
+```
 
