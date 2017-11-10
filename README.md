@@ -77,7 +77,8 @@ This will create a number of images in the current directory, please set VERBOSE
 #define VERBOSE true
 ```
 The "map" file will be needed, make sure you have previously clustered the edges points.
-To make a short film out of it : (only if the images were generated)
+To make a short film out of it : (only if the images were generated).
+
 For the frequency cluster
 ```sh
 $ avconv -i frequency-%06d.ppm -b:v 1M frequency.avi
