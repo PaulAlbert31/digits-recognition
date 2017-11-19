@@ -1,7 +1,8 @@
 # Digits recognition
 
 This is a personal project i work on during my free time. Feel free to try it yourself, i will add the instruction further down. I use the C++ language for now but i might switch to python in the future.
-The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supelec.fr/metz/personnel/frezza/
+The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supelec.fr/metz/personnel/frezza/.
+The neural network approach is based on a tutorial by Jeremy Fix : http://www.metz.supelec.fr/metz/personnel/fix_jer/.
 
 # What's new ?
 
