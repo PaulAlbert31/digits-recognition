@@ -5,7 +5,7 @@ The document Base.h is a courtesy of Hervé Frezza-Buet : http://www.metz.supele
 
 # What's new ?
 
-  - I am currently working on a better way to represent digits that is scale-resistant as well a invariant in rotation. See https://members.loria.fr/MOBerger/Enseignement/Master2/Exposes/mori-cvpr01.pdf
+  - I am currently working on dataset augmentation to better the convolutional network's performances.
 
 
 Yet to be done:
